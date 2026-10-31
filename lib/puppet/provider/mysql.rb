@@ -38,9 +38,9 @@ class Puppet::Provider::Mysql < Puppet::Provider
   ].join(':')
 
   COMMANDS = {
-    mysql_raw: ['mysql', 'mariadb'],
-    mysqld: ['mysqld', 'mariadbd'],
-    mysqladmin: ['mysqladmin', 'mariadb-admin'],
+    mysql_raw: ['mariadb', 'mysql'],
+    mysqld: ['mariadbd', 'mysqld'],
+    mysqladmin: ['mariadb-admin', 'mysqladmin'],
   }.freeze
 
   COMMANDS.each_key do |method_name|
