@@ -145,16 +145,16 @@ class Puppet::Provider::Mysql < Puppet::Provider
     if type.eql? 'system'
       if File.file?("#{Facter.value(:root_home)}/.mylogin.cnf")
         ENV['MYSQL_TEST_LOGIN_FILE'] = "#{Facter.value(:root_home)}/.mylogin.cnf"
-        mysql_raw([extra_args, system_database, '-e', text_of_sql].flatten.compact).scrub
+        mysql_raw([system_database, extra_args, '-e', text_of_sql].flatten.compact).scrub
       else
-        mysql_raw([extra_args, defaults_file, system_database, '-e', text_of_sql].flatten.compact).scrub
+        mysql_raw([defaults_file, system_database, extra_args, '-e', text_of_sql].flatten.compact).scrub
       end
     elsif type.eql? 'regular'
       if File.file?("#{Facter.value(:root_home)}/.mylogin.cnf")
         ENV['MYSQL_TEST_LOGIN_FILE'] = "#{Facter.value(:root_home)}/.mylogin.cnf"
         mysql_raw([extra_args, '-NBe', text_of_sql].flatten.compact).scrub
       else
-        mysql_raw([extra_args, defaults_file, '-NBe', text_of_sql].flatten.compact).scrub
+        mysql_raw([defaults_file, extra_args, '-NBe', text_of_sql].flatten.compact).scrub
       end
     else
       raise Puppet::Error, _("#mysql_caller: Unrecognised type '%{type}'" % { type: type })
