@@ -121,20 +121,40 @@ class Puppet::Provider::Mysql < Puppet::Provider
     self.class.defaults_file
   end
 
+  def self.ssl_args
+    @ssl_args ||= begin
+      # Test connection without explicit SSL flags
+      test_cmd = [defaults_file, '-NBe', 'SELECT 1'].flatten.compact
+      output = mysql_raw(test_cmd).scrub
+    
+      # If standard connection succeeds, no extra flags needed
+      []
+    rescue Puppet::ExecutionFailure, StandardError => e
+      # If error indicates SSL connection failure, use --skip-ssl
+      if e.message =~ /SSL connection error|SSL is required|SSL context/i
+        ['--skip-ssl']
+      else
+        []
+      end
+    end
+  end
+
   def self.mysql_caller(text_of_sql, type)
+    extra_args = ssl_args
+
     if type.eql? 'system'
       if File.file?("#{Facter.value(:root_home)}/.mylogin.cnf")
         ENV['MYSQL_TEST_LOGIN_FILE'] = "#{Facter.value(:root_home)}/.mylogin.cnf"
-        mysql_raw([system_database, '-e', text_of_sql].flatten.compact).scrub
+        mysql_raw([extra_args, system_database, '-e', text_of_sql].flatten.compact).scrub
       else
-        mysql_raw([defaults_file, system_database, '-e', text_of_sql].flatten.compact).scrub
+        mysql_raw([extra_args, defaults_file, system_database, '-e', text_of_sql].flatten.compact).scrub
       end
     elsif type.eql? 'regular'
       if File.file?("#{Facter.value(:root_home)}/.mylogin.cnf")
         ENV['MYSQL_TEST_LOGIN_FILE'] = "#{Facter.value(:root_home)}/.mylogin.cnf"
-        mysql_raw(['-NBe', text_of_sql].flatten.compact).scrub
+        mysql_raw([extra_args, '-NBe', text_of_sql].flatten.compact).scrub
       else
-        mysql_raw([defaults_file, '-NBe', text_of_sql].flatten.compact).scrub
+        mysql_raw([extra_args, defaults_file, '-NBe', text_of_sql].flatten.compact).scrub
       end
     else
       raise Puppet::Error, _("#mysql_caller: Unrecognised type '%{type}'" % { type: type })
